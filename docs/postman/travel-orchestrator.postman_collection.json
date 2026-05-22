@@ -1,0 +1,402 @@
+{
+  "info": {
+    "_postman_id": "7a4e0fc1-b62a-49c8-8f35-8b8b0f2e0b4a",
+    "name": "travel-orchestrator",
+    "description": "Importable Postman collection for the local travel-orchestrator API. Start the stack, run migrations, then create a travel plan first so the collection scripts can save workflow_id and trip_id variables for later requests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Basic API health endpoint."
+          },
+          "response": []
+        },
+        {
+          "name": "Prometheus Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/metrics",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "metrics"
+              ]
+            },
+            "description": "Prometheus scrape endpoint."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Travel Planning",
+      "item": [
+        {
+          "name": "Create Travel Plan",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('request accepted', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 202]);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "if (json.workflow_id) {",
+                  "  pm.collectionVariables.set('workflow_id', json.workflow_id);",
+                  "}",
+                  "if (json.trip_id) {",
+                  "  pm.collectionVariables.set('trip_id', json.trip_id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prompt\": \"Plan a 5 day culture and food trip to Lisbon for two people under 2500 USD\",\n  \"origin\": \"New York\",\n  \"destination\": \"Lisbon\",\n  \"travelers\": 2,\n  \"budget_amount\": 2500,\n  \"currency\": \"USD\",\n  \"preferences\": [\n    \"food\",\n    \"walkable neighborhoods\",\n    \"history\"\n  ],\n  \"travel_style\": \"culture\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/travel/plan",
+              "host": [
+                "{{base_url}}{{api_prefix}}"
+              ],
+              "path": [
+                "travel",
+                "plan"
+              ]
+            },
+            "description": "Creates a trip and starts the background travel planning workflow. The test script saves workflow_id and trip_id into collection variables."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Travel Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/travel/status/{{workflow_id}}",
+              "host": [
+                "{{base_url}}{{api_prefix}}"
+              ],
+              "path": [
+                "travel",
+                "status",
+                "{{workflow_id}}"
+              ]
+            },
+            "description": "Poll workflow state and final plan output. Run Create Travel Plan first."
+          },
+          "response": []
+        },
+        {
+          "name": "Validate Travel Plan",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/travel/validate?workflow_id={{workflow_id}}",
+              "host": [
+                "{{base_url}}{{api_prefix}}"
+              ],
+              "path": [
+                "travel",
+                "validate"
+              ],
+              "query": [
+                {
+                  "key": "workflow_id",
+                  "value": "{{workflow_id}}"
+                }
+              ]
+            },
+            "description": "Returns validation results for a workflow. Run Create Travel Plan first, then wait for validation to complete."
+          },
+          "response": []
+        },
+        {
+          "name": "Replan Travel",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('replan accepted', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 202]);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "if (json.workflow_id) {",
+                  "  pm.collectionVariables.set('workflow_id', json.workflow_id);",
+                  "}",
+                  "if (json.trip_id) {",
+                  "  pm.collectionVariables.set('trip_id', json.trip_id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"workflow_id\": \"{{workflow_id}}\",\n  \"prompt\": \"Replan this trip with a slower pace and more food experiences.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/travel/replan",
+              "host": [
+                "{{base_url}}{{api_prefix}}"
+              ],
+              "path": [
+                "travel",
+                "replan"
+              ]
+            },
+            "description": "Creates a new plan based on the prior workflow's final requirements. The script updates workflow_id and trip_id to the new workflow."
+          },
+          "response": []
+        },
+        {
+          "name": "Travel History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/travel/history?user_id={{user_id}}&limit=25",
+              "host": [
+                "{{base_url}}{{api_prefix}}"
+              ],
+              "path": [
+                "travel",
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "{{user_id}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "25"
+                }
+              ]
+            },
+            "description": "Lists recent trips for a user id. The API currently accepts user_id as a query parameter."
+          },
+          "response": []
+        },
+        {
+          "name": "Workflow Events WebSocket URL",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ws_url}}{{api_prefix}}/travel/ws/{{workflow_id}}",
+              "host": [
+                "{{ws_url}}{{api_prefix}}"
+              ],
+              "path": [
+                "travel",
+                "ws",
+                "{{workflow_id}}"
+              ]
+            },
+            "description": "Use this URL in Postman's WebSocket client: {{ws_url}}{{api_prefix}}/travel/ws/{{workflow_id}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Booking",
+      "item": [
+        {
+          "name": "Create Flight Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trip_id\": \"{{trip_id}}\",\n  \"provider\": \"mock-air\",\n  \"selection_id\": \"flt-flex-1\",\n  \"payment_token\": null,\n  \"metadata\": {\n    \"notes\": \"Local placeholder booking request\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/booking/flight",
+              "host": [
+                "{{base_url}}{{api_prefix}}"
+              ],
+              "path": [
+                "booking",
+                "flight"
+              ]
+            },
+            "description": "Creates a pending placeholder flight booking. Run Create Travel Plan first so trip_id is available."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Hotel Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trip_id\": \"{{trip_id}}\",\n  \"provider\": \"mock-hotel\",\n  \"selection_id\": \"stay-central-1\",\n  \"payment_token\": null,\n  \"metadata\": {\n    \"notes\": \"Local placeholder booking request\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/booking/hotel",
+              "host": [
+                "{{base_url}}{{api_prefix}}"
+              ],
+              "path": [
+                "booking",
+                "hotel"
+              ]
+            },
+            "description": "Creates a pending placeholder hotel booking. Run Create Travel Plan first so trip_id is available."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Documentation",
+      "item": [
+        {
+          "name": "OpenAPI Docs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/docs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "docs"
+              ]
+            },
+            "description": "FastAPI Swagger UI."
+          },
+          "response": []
+        },
+        {
+          "name": "OpenAPI JSON",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/openapi.json",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "openapi.json"
+              ]
+            },
+            "description": "Raw OpenAPI schema."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "ws_url",
+      "value": "ws://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "api_prefix",
+      "value": "/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "workflow_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "trip_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "00000000-0000-0000-0000-000000000000",
+      "type": "string"
+    }
+  ]
+}

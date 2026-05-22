@@ -52,3 +52,12 @@ curl -X POST http://localhost:8000/api/v1/travel/plan \
 See [docs/architecture.md](docs/architecture.md) for design details.
 
 For a deeper production architecture walkthrough, see [ARCHITECTURE_README.md](ARCHITECTURE_README.md).
+
+## Postman
+
+Import these files into Postman for local API testing:
+
+- Collection: `docs/postman/travel-orchestrator.postman_collection.json`
+- Environment: `docs/postman/travel-orchestrator.local.postman_environment.json`
+
+Run `Create Travel Plan` first; its test script stores `workflow_id` and `trip_id` for follow-up requests.
