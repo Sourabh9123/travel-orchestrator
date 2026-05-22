@@ -16,6 +16,8 @@ EventHook = Callable[[WorkflowEvent], Awaitable[None]]
 
 
 class WorkflowEngine:
+    """Dependency-aware async DAG executor for agent workflows."""
+
     def __init__(
         self,
         agents: dict[str, BaseAgent],
@@ -24,6 +26,8 @@ class WorkflowEngine:
         event_hooks: list[EventHook] | None = None,
         default_timeout_seconds: int = 60,
     ) -> None:
+        """Create a workflow engine with injected agents, memory, tools, and hooks."""
+
         self.agents = agents
         self.memory = memory
         self.tools = tools
@@ -37,6 +41,8 @@ class WorkflowEngine:
         initial_state: dict[str, Any],
         user_id: str | None = None,
     ) -> dict[str, Any]:
+        """Execute a graph to completion and return the final shared state."""
+
         await self.memory.initialize(
             workflow_id,
             {
@@ -90,6 +96,8 @@ class WorkflowEngine:
         return snapshot.state
 
     async def _run_node(self, workflow_id: UUID, node: WorkflowNode, user_id: str | None) -> None:
+        """Run one workflow node with retries and memory updates."""
+
         agent = self.agents[node.agent_name]
         await self._emit(workflow_id, WorkflowEventType.NODE_STARTED, node.name)
         last_error: Exception | None = None
@@ -133,6 +141,8 @@ class WorkflowEngine:
         node_name: str | None = None,
         payload: dict[str, Any] | None = None,
     ) -> None:
+        """Emit workflow events to structured logs and registered hooks."""
+
         event = WorkflowEvent(
             workflow_id=workflow_id,
             event_type=event_type,

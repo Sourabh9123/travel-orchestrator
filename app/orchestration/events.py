@@ -7,6 +7,8 @@ from pydantic import BaseModel, Field
 
 
 class WorkflowEventType(StrEnum):
+    """Event names emitted by the workflow engine."""
+
     WORKFLOW_STARTED = "workflow_started"
     NODE_STARTED = "node_started"
     NODE_COMPLETED = "node_completed"
@@ -16,6 +18,8 @@ class WorkflowEventType(StrEnum):
 
 
 class WorkflowEvent(BaseModel):
+    """Structured workflow event emitted to logs, Redis, and WebSockets."""
+
     workflow_id: UUID
     event_type: WorkflowEventType
     node_name: str | None = None

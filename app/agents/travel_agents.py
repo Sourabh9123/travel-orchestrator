@@ -8,10 +8,14 @@ from app.tools.base import ToolContext
 
 
 class RequirementAnalysisAgent(BaseAgent):
+    """Extract structured requirements from a raw user travel request."""
+
     name = "requirement_analysis"
     description = "Extracts structured trip requirements from user intent."
 
     async def _run(self, state: dict[str, Any], context: AgentContext) -> AgentOutput:
+        """Build canonical `TravelRequirements` for downstream agents."""
+
         request = state["request"]
         start_date = _maybe_date(request.get("start_date"))
         end_date = _maybe_date(request.get("end_date"))
@@ -35,10 +39,14 @@ class RequirementAnalysisAgent(BaseAgent):
 
 
 class DestinationResearchAgent(BaseAgent):
+    """Research destination context and safety/seasonality notes."""
+
     name = "destination_research"
     description = "Researches destination fit, safety, seasonality, and highlights."
 
     async def _run(self, state: dict[str, Any], context: AgentContext) -> AgentOutput:
+        """Run the places research tool for the selected destination."""
+
         requirements = state["requirements"]
         tool_context = ToolContext(workflow_id=context.workflow_id, user_id=context.user_id)
         result = await context.tools.get("places_research").execute(requirements, tool_context)
@@ -46,10 +54,14 @@ class DestinationResearchAgent(BaseAgent):
 
 
 class FlightTransportationAgent(BaseAgent):
+    """Find flight and ground transportation recommendations."""
+
     name = "flight_transportation"
     description = "Finds flight and ground transportation options."
 
     async def _run(self, state: dict[str, Any], context: AgentContext) -> AgentOutput:
+        """Run flight search and append local transport guidance."""
+
         tool_context = ToolContext(workflow_id=context.workflow_id, user_id=context.user_id)
         result = await context.tools.get("flight_search").execute(state["requirements"], tool_context)
         result["ground_transport"] = ["Use airport rail or pre-booked transfer for arrival day."]
@@ -57,20 +69,28 @@ class FlightTransportationAgent(BaseAgent):
 
 
 class HotelStayAgent(BaseAgent):
+    """Find stay recommendations and location scoring."""
+
     name = "hotel_stay"
     description = "Finds stay options and location scoring."
 
     async def _run(self, state: dict[str, Any], context: AgentContext) -> AgentOutput:
+        """Run hotel search with the normalized trip requirements."""
+
         tool_context = ToolContext(workflow_id=context.workflow_id, user_id=context.user_id)
         result = await context.tools.get("hotel_search").execute(state["requirements"], tool_context)
         return AgentOutput(agent_name=self.name, data={"hotels": result})
 
 
 class FoodRestaurantAgent(BaseAgent):
+    """Recommend local food, cuisines, and restaurants."""
+
     name = "food_restaurant"
     description = "Suggests restaurants, local foods, and cuisine discovery."
 
     async def _run(self, state: dict[str, Any], context: AgentContext) -> AgentOutput:
+        """Generate food recommendations from destination context."""
+
         destination = state["requirements"]["destination"]
         return AgentOutput(
             agent_name=self.name,
@@ -87,10 +107,14 @@ class FoodRestaurantAgent(BaseAgent):
 
 
 class ActivityAttractionAgent(BaseAgent):
+    """Recommend attractions, experiences, and ticket-worthy activities."""
+
     name = "activity_attraction"
     description = "Recommends attractions, experiences, events, and tickets."
 
     async def _run(self, state: dict[str, Any], context: AgentContext) -> AgentOutput:
+        """Transform researched highlights into structured activities."""
+
         destination_data = state.get("destination", {})
         highlights = destination_data.get("highlights", [])
         return AgentOutput(
@@ -105,20 +129,28 @@ class ActivityAttractionAgent(BaseAgent):
 
 
 class WeatherSeasonAgent(BaseAgent):
+    """Analyze weather, seasonality, and packing implications."""
+
     name = "weather_season"
     description = "Analyzes weather, seasonality, and packing needs."
 
     async def _run(self, state: dict[str, Any], context: AgentContext) -> AgentOutput:
+        """Run the weather analysis tool for trip requirements."""
+
         tool_context = ToolContext(workflow_id=context.workflow_id, user_id=context.user_id)
         result = await context.tools.get("weather_analysis").execute(state["requirements"], tool_context)
         return AgentOutput(agent_name=self.name, data={"weather": result})
 
 
 class BudgetEstimationAgent(BaseAgent):
+    """Estimate trip costs and budget pressure."""
+
     name = "budget_estimation"
     description = "Builds cost breakdown and optimization recommendations."
 
     async def _run(self, state: dict[str, Any], context: AgentContext) -> AgentOutput:
+        """Run budget estimation and compute the total estimate."""
+
         tool_context = ToolContext(workflow_id=context.workflow_id, user_id=context.user_id)
         result = await context.tools.get("budget_estimator").execute(state["requirements"], tool_context)
         result["estimated_total"] = sum(result["breakdown"].values())
@@ -126,10 +158,14 @@ class BudgetEstimationAgent(BaseAgent):
 
 
 class ItineraryPlanningAgent(BaseAgent):
+    """Create a fatigue-aware day-wise itinerary."""
+
     name = "itinerary_planning"
     description = "Creates an optimized day-wise itinerary."
 
     async def _run(self, state: dict[str, Any], context: AgentContext) -> AgentOutput:
+        """Group available activities across the requested trip duration."""
+
         requirements = state["requirements"]
         activities = state.get("activities", [])
         days = requirements["duration_days"]
@@ -150,10 +186,14 @@ class ItineraryPlanningAgent(BaseAgent):
 
 
 class ValidationAgent(BaseAgent):
+    """Validate the generated plan for consistency and feasibility."""
+
     name = "validation"
     description = "Checks consistency, feasibility, and conflicts."
 
     async def _run(self, state: dict[str, Any], context: AgentContext) -> AgentOutput:
+        """Detect conflicts before final plan generation."""
+
         conflicts: list[str] = []
         requirements = state["requirements"]
         budget = state.get("budget", {})
@@ -172,10 +212,14 @@ class ValidationAgent(BaseAgent):
 
 
 class FinalPlanGeneratorAgent(BaseAgent):
+    """Combine all agent outputs into an exportable final plan."""
+
     name = "final_plan_generator"
     description = "Combines validated outputs into an exportable travel plan."
 
     async def _run(self, state: dict[str, Any], context: AgentContext) -> AgentOutput:
+        """Assemble the final travel plan payload."""
+
         plan = {
             "summary": {
                 "destination": state["requirements"]["destination"],
@@ -198,10 +242,14 @@ class FinalPlanGeneratorAgent(BaseAgent):
 
 
 class SupervisorAgent(BaseAgent):
+    """Declare workflow strategy and supervisor metadata."""
+
     name = "supervisor"
     description = "Coordinates workflow planning, shared state, retries, and final handoff."
 
     async def _run(self, state: dict[str, Any], context: AgentContext) -> AgentOutput:
+        """Return supervisor metadata for auditability."""
+
         return AgentOutput(
             agent_name=self.name,
             data={
@@ -214,6 +262,8 @@ class SupervisorAgent(BaseAgent):
 
 
 def build_agent_registry() -> dict[str, BaseAgent]:
+    """Build the default agent registry keyed by agent name."""
+
     agents: list[BaseAgent] = [
         SupervisorAgent(),
         RequirementAnalysisAgent(),
@@ -232,6 +282,8 @@ def build_agent_registry() -> dict[str, BaseAgent]:
 
 
 def _guess_destination(prompt: str) -> str:
+    """Infer a destination from a prompt when no explicit field is provided."""
+
     lowered = prompt.lower()
     for marker in (" to ", " in ", " for "):
         if marker in lowered:
@@ -242,6 +294,8 @@ def _guess_destination(prompt: str) -> str:
 
 
 def _maybe_date(value: Any) -> date | None:
+    """Parse optional ISO date-like values into `date` objects."""
+
     if value is None or isinstance(value, date):
         return value
     return date.fromisoformat(str(value))

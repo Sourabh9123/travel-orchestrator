@@ -50,3 +50,5 @@ curl -X POST http://localhost:8000/api/v1/travel/plan \
 ```
 
 See [docs/architecture.md](docs/architecture.md) for design details.
+
+For a deeper production architecture walkthrough, see [ARCHITECTURE_README.md](ARCHITECTURE_README.md).

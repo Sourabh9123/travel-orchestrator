@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.travel_agents import build_agent_registry
 from app.core.config import Settings
+from app.core.exceptions import AppError, WorkflowExecutionError
 from app.db.models import Trip, TripStatus
 from app.memory.shared_memory import SharedMemory
 from app.orchestration.engine import WorkflowEngine
@@ -18,13 +19,19 @@ from app.workflows.travel import build_travel_planning_graph
 
 
 class TravelPlanningService:
+    """Use-case service for travel planning workflows."""
+
     def __init__(self, session: AsyncSession, redis: Redis, settings: Settings) -> None:
+        """Create the service with persistence and coordination dependencies."""
+
         self.session = session
         self.redis = redis
         self.settings = settings
         self.memory = SharedMemory(redis, ttl_seconds=settings.memory_ttl_seconds)
 
     async def start_plan(self, request: TravelPlanRequest) -> TravelPlanResponse:
+        """Create a trip and accepted workflow record before async execution."""
+
         workflow_id = uuid4()
         trip = Trip(
             user_id=request.user_id,
@@ -47,6 +54,8 @@ class TravelPlanningService:
         return TravelPlanResponse(workflow_id=workflow_id, trip_id=trip.id, status="accepted")
 
     async def run_plan(self, workflow_id: UUID, request: TravelPlanRequest, trip_id: UUID | None) -> None:
+        """Execute the travel planning workflow and persist the final result."""
+
         user_id = str(request.user_id) if request.user_id else None
         await self.redis.hset(f"travel:workflow:{workflow_id}:meta", mapping={"status": "running"})
         try:
@@ -72,7 +81,7 @@ class TravelPlanningService:
                     trip.requirements = final_state.get("requirements", trip.requirements)
                     await self.session.commit()
             await self.redis.hset(f"travel:workflow:{workflow_id}:meta", mapping={"status": "completed"})
-        except Exception as exc:
+        except AppError as exc:
             await self.redis.hset(
                 f"travel:workflow:{workflow_id}:meta",
                 mapping={"status": "failed", "error": str(exc)},
@@ -81,13 +90,29 @@ class TravelPlanningService:
                 await TripRepository(self.session).set_status(trip_id, TripStatus.FAILED)
                 await self.session.commit()
             raise
+        except Exception as exc:
+            await self.redis.hset(
+                f"travel:workflow:{workflow_id}:meta",
+                mapping={"status": "failed", "error": str(exc)},
+            )
+            if trip_id is not None:
+                await TripRepository(self.session).set_status(trip_id, TripStatus.FAILED)
+                await self.session.commit()
+            raise WorkflowExecutionError(
+                "Travel planning workflow failed",
+                details={"workflow_id": str(workflow_id), "trip_id": str(trip_id) if trip_id else None},
+            ) from exc
 
     async def validate(self, workflow_id: UUID) -> ValidationResult:
+        """Return the validation result for a completed or running workflow."""
+
         snapshot = await self.memory.get(workflow_id)
         raw = snapshot.state.get("validation", {"is_valid": False, "conflicts": ["Plan not validated"]})
         return ValidationResult.model_validate(raw)
 
     async def status(self, workflow_id: UUID) -> dict[str, Any]:
+        """Return workflow metadata plus available shared state summary."""
+
         meta = await self.redis.hgetall(f"travel:workflow:{workflow_id}:meta")
         state: dict[str, Any] = {}
         try:
@@ -102,6 +127,8 @@ class TravelPlanningService:
         return {"workflow_id": str(workflow_id), "meta": meta, "state": state}
 
     async def history(self, user_id: UUID, limit: int = 25) -> list[dict[str, Any]]:
+        """Return recent trip history for a user."""
+
         trips = await TripRepository(self.session).list_for_user(user_id, limit=limit)
         return [
             {
@@ -115,5 +142,7 @@ class TravelPlanningService:
         ]
 
     async def _publish_event(self, event: WorkflowEvent) -> None:
+        """Publish workflow events to Redis pub/sub and active WebSocket clients."""
+
         await self.redis.publish(f"travel:workflow:{event.workflow_id}:events", event.model_dump_json())
         await websocket_manager.publish(event.workflow_id, event.model_dump(mode="json"))

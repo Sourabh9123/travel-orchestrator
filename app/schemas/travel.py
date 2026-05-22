@@ -7,6 +7,8 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class TravelStyle(StrEnum):
+    """Supported high-level travel styles."""
+
     BUDGET = "budget"
     COMFORT = "comfort"
     LUXURY = "luxury"
@@ -17,6 +19,8 @@ class TravelStyle(StrEnum):
 
 
 class TravelPlanRequest(BaseModel):
+    """Client request to create a travel plan workflow."""
+
     user_id: UUID | None = None
     prompt: str = Field(min_length=5, max_length=10_000)
     origin: str | None = Field(default=None, max_length=255)
@@ -32,10 +36,14 @@ class TravelPlanRequest(BaseModel):
     @field_validator("currency")
     @classmethod
     def normalize_currency(cls, value: str) -> str:
+        """Normalize currency codes to uppercase ISO-like values."""
+
         return value.upper()
 
 
 class TravelRequirements(BaseModel):
+    """Structured requirements extracted from a travel planning request."""
+
     origin: str | None = None
     destination: str
     start_date: date | None = None
@@ -51,6 +59,8 @@ class TravelRequirements(BaseModel):
 
 
 class AgentOutput(BaseModel):
+    """Standard output contract returned by every agent."""
+
     agent_name: str
     data: dict[str, Any]
     confidence: float = Field(default=0.75, ge=0, le=1)
@@ -58,12 +68,16 @@ class AgentOutput(BaseModel):
 
 
 class ValidationResult(BaseModel):
+    """Result produced by the validation agent."""
+
     is_valid: bool
     conflicts: list[str] = Field(default_factory=list)
     recommendations: list[str] = Field(default_factory=list)
 
 
 class TravelPlanResponse(BaseModel):
+    """Response containing the workflow identity and final plan status."""
+
     workflow_id: UUID
     trip_id: UUID | None = None
     status: str
@@ -72,11 +86,15 @@ class TravelPlanResponse(BaseModel):
 
 
 class ReplanRequest(BaseModel):
+    """Client request to create a revised plan from a previous workflow."""
+
     workflow_id: UUID
     prompt: str = Field(min_length=3, max_length=10_000)
 
 
 class BookingRequest(BaseModel):
+    """Client request to reserve or book a selected travel component."""
+
     trip_id: UUID
     provider: str = Field(min_length=1, max_length=120)
     selection_id: str = Field(min_length=1, max_length=255)

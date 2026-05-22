@@ -12,6 +12,8 @@ async def book_flight(
     request: BookingRequest,
     service: BookingService = Depends(get_booking_service),
 ) -> dict:
+    """Create a pending flight booking request."""
+
     return await service.create_booking("flight", request)
 
 
@@ -20,4 +22,6 @@ async def book_hotel(
     request: BookingRequest,
     service: BookingService = Depends(get_booking_service),
 ) -> dict:
+    """Create a pending hotel booking request."""
+
     return await service.create_booking("hotel", request)

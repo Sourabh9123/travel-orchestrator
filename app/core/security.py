@@ -11,6 +11,8 @@ from app.core.exceptions import ValidationFailure
 
 
 class Role(StrEnum):
+    """Application roles used by RBAC decisions."""
+
     USER = "user"
     ADMIN = "admin"
     AGENT = "agent"
@@ -20,14 +22,20 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def hash_password(password: str) -> str:
+    """Hash a plaintext password using the configured password context."""
+
     return pwd_context.hash(password)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify a plaintext password against a stored password hash."""
+
     return pwd_context.verify(plain_password, hashed_password)
 
 
 def create_access_token(settings: Settings, subject: UUID | str, roles: list[Role]) -> str:
+    """Create a signed JWT access token for a subject and role set."""
+
     expires_at = datetime.now(UTC) + timedelta(minutes=settings.access_token_expire_minutes)
     payload: dict[str, Any] = {
         "sub": str(subject),
@@ -39,6 +47,8 @@ def create_access_token(settings: Settings, subject: UUID | str, roles: list[Rol
 
 
 def decode_access_token(settings: Settings, token: str) -> dict[str, Any]:
+    """Decode and validate a JWT access token."""
+
     try:
         return jwt.decode(token, settings.secret_key, algorithms=[settings.jwt_algorithm])
     except JWTError as exc:

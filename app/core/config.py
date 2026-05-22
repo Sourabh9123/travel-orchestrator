@@ -5,6 +5,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    """Application settings loaded from environment variables and `.env`."""
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     app_name: str = "travel-orchestrator"
@@ -37,6 +39,8 @@ class Settings(BaseSettings):
     @field_validator("debug", mode="before")
     @classmethod
     def parse_debug(cls, value: object) -> object:
+        """Normalize common deployment strings into a boolean debug flag."""
+
         if isinstance(value, str) and value.lower() in {"release", "prod", "production"}:
             return False
         return value
@@ -44,6 +48,8 @@ class Settings(BaseSettings):
     @computed_field  # type: ignore[misc]
     @property
     def database_url(self) -> PostgresDsn:
+        """Build the async SQLAlchemy PostgreSQL DSN from component settings."""
+
         return PostgresDsn.build(
             scheme="postgresql+asyncpg",
             username=self.postgres_user,
@@ -56,4 +62,6 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
+    """Return cached process-wide application settings."""
+
     return Settings()

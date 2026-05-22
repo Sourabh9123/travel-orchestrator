@@ -10,6 +10,8 @@ from app.core.config import Settings
 
 
 def configure_tracing(app: FastAPI, settings: Settings) -> None:
+    """Configure OpenTelemetry tracing for the FastAPI app."""
+
     provider = TracerProvider(resource=Resource.create({"service.name": settings.app_name}))
     if settings.otel_exporter_otlp_endpoint:
         provider.add_span_processor(

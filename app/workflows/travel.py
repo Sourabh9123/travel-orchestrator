@@ -2,6 +2,8 @@ from app.orchestration.graph import WorkflowGraph, WorkflowNode
 
 
 def build_travel_planning_graph(timeout_seconds: int) -> WorkflowGraph:
+    """Build the default DAG for end-to-end travel planning."""
+
     nodes = [
         WorkflowNode("supervise", "supervisor", timeout_seconds=timeout_seconds),
         WorkflowNode(

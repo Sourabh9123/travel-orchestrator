@@ -9,6 +9,8 @@ logger = get_logger(__name__)
 
 
 async def main() -> None:
+    """Run the background worker process placeholder."""
+
     logger.info("worker.started", queue="travel-workflows")
     while True:
         await asyncio.sleep(60)

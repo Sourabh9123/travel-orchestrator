@@ -14,6 +14,8 @@ async def get_current_roles(
     authorization: str | None = Header(default=None),
     settings: Settings = Depends(get_settings),
 ) -> list[Role]:
+    """Resolve current request roles from an optional bearer token."""
+
     if not authorization:
         return [Role.USER]
     scheme, _, token = authorization.partition(" ")
@@ -28,6 +30,8 @@ async def get_travel_service(
     redis: Redis = Depends(get_redis),
     settings: Settings = Depends(get_settings),
 ) -> AsyncIterator:
+    """Provide a request-scoped travel planning service."""
+
     from app.services.travel_service import TravelPlanningService
 
     yield TravelPlanningService(session=session, redis=redis, settings=settings)
@@ -38,6 +42,8 @@ async def get_booking_service(
     redis: Redis = Depends(get_redis),
     settings: Settings = Depends(get_settings),
 ) -> AsyncIterator:
+    """Provide a request-scoped booking service."""
+
     from app.services.booking_service import BookingService
 
     yield BookingService(session=session, redis=redis, settings=settings)

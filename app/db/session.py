@@ -10,5 +10,7 @@ async_session_factory = async_sessionmaker(engine, expire_on_commit=False, class
 
 
 async def get_db_session() -> AsyncIterator[AsyncSession]:
+    """Yield an async SQLAlchemy session for request-scoped dependencies."""
+
     async with async_session_factory() as session:
         yield session

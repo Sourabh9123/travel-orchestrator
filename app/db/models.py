@@ -10,6 +10,8 @@ from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class TripStatus(StrEnum):
+    """Lifecycle states for a trip planning record."""
+
     DRAFT = "draft"
     PLANNING = "planning"
     VALIDATING = "validating"
@@ -20,6 +22,8 @@ class TripStatus(StrEnum):
 
 
 class BookingStatus(StrEnum):
+    """Lifecycle states for provider booking attempts."""
+
     PENDING = "pending"
     CONFIRMED = "confirmed"
     CANCELLED = "cancelled"
@@ -27,6 +31,8 @@ class BookingStatus(StrEnum):
 
 
 class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    """Application user account with role metadata."""
+
     __tablename__ = "users"
 
     email: Mapped[str] = mapped_column(String(320), unique=True, index=True, nullable=False)
@@ -38,6 +44,8 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
 
 class Trip(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    """Durable trip planning aggregate."""
+
     __tablename__ = "trips"
 
     user_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"), index=True)
@@ -59,6 +67,8 @@ class Trip(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
 
 class Itinerary(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    """Day-level itinerary generated for a trip."""
+
     __tablename__ = "itineraries"
 
     trip_id: Mapped[UUID] = mapped_column(ForeignKey("trips.id"), index=True)
@@ -71,6 +81,8 @@ class Itinerary(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
 
 class Flight(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    """Flight option or booking candidate associated with a trip."""
+
     __tablename__ = "flights"
 
     trip_id: Mapped[UUID] = mapped_column(ForeignKey("trips.id"), index=True)
@@ -88,6 +100,8 @@ class Flight(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
 
 class Hotel(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    """Hotel or stay option associated with a trip."""
+
     __tablename__ = "hotels"
 
     trip_id: Mapped[UUID] = mapped_column(ForeignKey("trips.id"), index=True)
@@ -102,6 +116,8 @@ class Hotel(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
 
 class Activity(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    """Activity, attraction, or experience associated with a trip."""
+
     __tablename__ = "activities"
 
     trip_id: Mapped[UUID] = mapped_column(ForeignKey("trips.id"), index=True)
@@ -116,6 +132,8 @@ class Activity(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
 
 class Booking(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    """Provider booking attempt for a travel component."""
+
     __tablename__ = "bookings"
 
     trip_id: Mapped[UUID] = mapped_column(ForeignKey("trips.id"), index=True)
@@ -129,6 +147,8 @@ class Booking(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
 
 class Conversation(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    """Stored conversation history for trip planning interactions."""
+
     __tablename__ = "conversations"
 
     trip_id: Mapped[UUID | None] = mapped_column(ForeignKey("trips.id"), index=True)
@@ -137,6 +157,8 @@ class Conversation(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
 
 class AgentLog(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    """Audit log entry for agent execution."""
+
     __tablename__ = "agent_logs"
 
     trip_id: Mapped[UUID | None] = mapped_column(ForeignKey("trips.id"), index=True)
@@ -150,6 +172,8 @@ class AgentLog(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
 
 class ExecutionGraph(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    """Persisted workflow graph and execution state snapshot."""
+
     __tablename__ = "execution_graphs"
 
     trip_id: Mapped[UUID | None] = mapped_column(ForeignKey("trips.id"), index=True)

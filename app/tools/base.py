@@ -27,12 +27,16 @@ logger = get_logger(__name__)
 
 @dataclass(frozen=True, slots=True)
 class ToolContext:
+    """Execution metadata passed to provider tools."""
+
     workflow_id: str
     user_id: str | None = None
     correlation_id: str | None = None
 
 
 class BaseTool(ABC):
+    """Base interface for provider tools with shared runtime safeguards."""
+
     name: str
     description: str
 
@@ -44,6 +48,8 @@ class BaseTool(ABC):
         max_retries: int = 2,
         max_calls_per_minute: int = 120,
     ) -> None:
+        """Configure optional Redis-backed caching, retries, and rate limits."""
+
         self.redis = redis
         self.timeout_seconds = timeout_seconds
         self.cache_ttl_seconds = cache_ttl_seconds
@@ -51,6 +57,8 @@ class BaseTool(ABC):
         self.max_calls_per_minute = max_calls_per_minute
 
     async def execute(self, payload: dict[str, Any], context: ToolContext) -> dict[str, Any]:
+        """Execute a tool with rate limiting, caching, retries, and logging."""
+
         await self._enforce_rate_limit(context)
         cache_key = self._cache_key(payload)
         if self.redis is not None:
@@ -86,11 +94,15 @@ class BaseTool(ABC):
 
     @abstractmethod
     async def _execute(self, payload: dict[str, Any], context: ToolContext) -> dict[str, Any]:
+        """Perform provider-specific work in concrete tool classes."""
+
         raise NotImplementedError
 
     async def _execute_with_simple_retries(
         self, payload: dict[str, Any], context: ToolContext
     ) -> dict[str, Any]:
+        """Fallback retry loop used when tenacity is not installed."""
+
         last_error: Exception | None = None
         for _ in range(self.max_retries + 1):
             try:
@@ -101,10 +113,14 @@ class BaseTool(ABC):
         raise last_error or ToolExecutionError(f"Tool {self.name} failed")
 
     def _cache_key(self, payload: dict[str, Any]) -> str:
+        """Build a stable Redis cache key for a tool payload."""
+
         digest = hashlib.sha256(json.dumps(payload, sort_keys=True, default=str).encode()).hexdigest()
         return f"travel:tool:{self.name}:{digest}"
 
     async def _enforce_rate_limit(self, context: ToolContext) -> None:
+        """Apply a simple per-tool per-user fixed-window Redis rate limit."""
+
         if self.redis is None:
             return
         identity = context.user_id or "anonymous"

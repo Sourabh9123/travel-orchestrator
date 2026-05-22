@@ -9,20 +9,32 @@ except ImportError:  # pragma: no cover - used only in dependency-light local en
 
 
 class _StdlibStructuredLogger:
+    """Small structlog-compatible fallback used when structlog is unavailable."""
+
     def __init__(self, name: str) -> None:
+        """Create a stdlib logger wrapper for the given logger name."""
+
         self._logger = logging.getLogger(name)
 
     def info(self, event: str, **kwargs: Any) -> None:
+        """Log an informational structured event."""
+
         self._logger.info("%s %s", event, kwargs)
 
     def warning(self, event: str, **kwargs: Any) -> None:
+        """Log a warning structured event."""
+
         self._logger.warning("%s %s", event, kwargs)
 
     def error(self, event: str, **kwargs: Any) -> None:
+        """Log an error structured event."""
+
         self._logger.error("%s %s", event, kwargs)
 
 
 def configure_logging(debug: bool = False) -> None:
+    """Configure JSON structured logging for the process."""
+
     if structlog is None:
         logging.basicConfig(
             format="%(asctime)s %(levelname)s %(name)s %(message)s",
@@ -56,6 +68,8 @@ def configure_logging(debug: bool = False) -> None:
 
 
 def get_logger(name: str) -> Any:
+    """Return a structured logger or a stdlib fallback logger."""
+
     if structlog is None:
         return _StdlibStructuredLogger(name)
     return structlog.get_logger(name)
