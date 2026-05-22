@@ -20,9 +20,12 @@ class Settings(BaseSettings):
 
     postgres_host: str = "localhost"
     postgres_port: int = 5432
+    postgres_host_port: int = 5432
     postgres_db: str = "travel_orchestrator"
     postgres_user: str = "travel"
     postgres_password: str = "travel"
+    db_connect_retry_attempts: int = 10
+    db_connect_retry_delay_seconds: float = 1.0
 
     redis_url: RedisDsn = "redis://localhost:6379/0"  # type: ignore[assignment]
     openai_api_key: str | None = None
