@@ -54,7 +54,9 @@ class SharedMemory:
     async def get(self, workflow_id: UUID) -> MemorySnapshot:
         """Read the latest workflow memory snapshot."""
 
-        raw, version = await self.redis.mget(self._state_key(workflow_id), self._version_key(workflow_id))
+        raw, version = await self.redis.mget(
+            self._state_key(workflow_id), self._version_key(workflow_id)
+        )
         if raw is None:
             raise MemoryStateError("Workflow state was not found", code="memory_not_found")
         return MemorySnapshot(

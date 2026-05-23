@@ -32,6 +32,7 @@ class BaseAgent(ABC):
 
     name: str
     description: str
+    system_prompt: str
 
     async def run(self, state: dict[str, Any], context: AgentContext) -> AgentOutput:
         """Execute an agent with latency logging and named error handling."""
@@ -55,3 +56,12 @@ class BaseAgent(ABC):
         """Implement agent-specific behavior in subclasses."""
 
         raise NotImplementedError
+
+    def metadata(self) -> dict[str, str]:
+        """Return operator-facing metadata for planning, audits, and prompt inspection."""
+
+        return {
+            "name": self.name,
+            "description": self.description,
+            "system_prompt": self.system_prompt,
+        }

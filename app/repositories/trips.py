@@ -15,7 +15,10 @@ class TripRepository(AsyncRepository[Trip]):
         """Return recent trips owned by a user."""
 
         result = await self.session.execute(
-            select(Trip).where(Trip.user_id == user_id).order_by(Trip.created_at.desc()).limit(limit)
+            select(Trip)
+            .where(Trip.user_id == user_id)
+            .order_by(Trip.created_at.desc())
+            .limit(limit)
         )
         return list(result.scalars().all())
 

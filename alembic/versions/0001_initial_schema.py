@@ -8,8 +8,9 @@ Create Date: 2026-05-23 00:00:00.000000
 from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 revision: str = "0001_initial_schema"
 down_revision: str | None = None
@@ -200,8 +201,18 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["trip_id"], ["trips.id"]),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f("ix_execution_graphs_trip_id"), "execution_graphs", ["trip_id"], unique=False)
-    op.create_index(op.f("ix_execution_graphs_workflow_id"), "execution_graphs", ["workflow_id"], unique=False)
+    op.create_index(
+        op.f("ix_execution_graphs_trip_id"),
+        "execution_graphs",
+        ["trip_id"],
+        unique=False,
+    )
+    op.create_index(
+        op.f("ix_execution_graphs_workflow_id"),
+        "execution_graphs",
+        ["workflow_id"],
+        unique=False,
+    )
 
 
 def downgrade() -> None:

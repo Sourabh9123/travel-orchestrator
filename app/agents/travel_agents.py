@@ -1,6 +1,5 @@
 from datetime import date
 from typing import Any
-from uuid import UUID
 
 from app.agents.base import AgentContext, BaseAgent
 from app.schemas.travel import AgentOutput, TravelRequirements, TravelStyle, ValidationResult
@@ -12,6 +11,13 @@ class RequirementAnalysisAgent(BaseAgent):
 
     name = "requirement_analysis"
     description = "Extracts structured trip requirements from user intent."
+    system_prompt = (
+        "You are the travel requirements analyst. Convert the user's free-form trip "
+        "request into precise, normalized requirements for downstream planning. Preserve "
+        "explicit dates, traveler counts, budget, currency, preferences, travel style, "
+        "constraints, and unknowns. Avoid inventing details; when a field is missing, use "
+        "a conservative default and leave a clear constraint or follow-up note."
+    )
 
     async def _run(self, state: dict[str, Any], context: AgentContext) -> AgentOutput:
         """Build canonical `TravelRequirements` for downstream agents."""
@@ -35,7 +41,9 @@ class RequirementAnalysisAgent(BaseAgent):
             visa_requirements=["Check passport nationality against destination rules."],
             constraints=[],
         )
-        return AgentOutput(agent_name=self.name, data={"requirements": requirements.model_dump(mode="json")})
+        return AgentOutput(
+            agent_name=self.name, data={"requirements": requirements.model_dump(mode="json")}
+        )
 
 
 class DestinationResearchAgent(BaseAgent):
@@ -43,6 +51,13 @@ class DestinationResearchAgent(BaseAgent):
 
     name = "destination_research"
     description = "Researches destination fit, safety, seasonality, and highlights."
+    system_prompt = (
+        "You are the destination research specialist. Evaluate the destination through "
+        "traveler fit, seasonality, safety, neighborhoods, logistics, and standout "
+        "experiences. Favor practical, current, locally grounded guidance over generic "
+        "tourism copy. Surface caveats that could affect timing, accessibility, cost, or "
+        "comfort."
+    )
 
     async def _run(self, state: dict[str, Any], context: AgentContext) -> AgentOutput:
         """Run the places research tool for the selected destination."""
@@ -58,12 +73,20 @@ class FlightTransportationAgent(BaseAgent):
 
     name = "flight_transportation"
     description = "Finds flight and ground transportation options."
+    system_prompt = (
+        "You are the flight and transportation specialist. Compare route options, arrival "
+        "timing, layover tolerance, airport transfers, and local mobility choices against "
+        "the trip budget and pace. Recommend options that reduce stress on arrival and "
+        "call out tradeoffs in price, duration, reliability, and convenience."
+    )
 
     async def _run(self, state: dict[str, Any], context: AgentContext) -> AgentOutput:
         """Run flight search and append local transport guidance."""
 
         tool_context = ToolContext(workflow_id=context.workflow_id, user_id=context.user_id)
-        result = await context.tools.get("flight_search").execute(state["requirements"], tool_context)
+        result = await context.tools.get("flight_search").execute(
+            state["requirements"], tool_context
+        )
         result["ground_transport"] = ["Use airport rail or pre-booked transfer for arrival day."]
         return AgentOutput(agent_name=self.name, data={"flights": result})
 
@@ -73,12 +96,20 @@ class HotelStayAgent(BaseAgent):
 
     name = "hotel_stay"
     description = "Finds stay options and location scoring."
+    system_prompt = (
+        "You are the lodging specialist. Recommend stays by matching budget, travel "
+        "style, group size, neighborhood fit, transit access, safety, and proximity to "
+        "planned activities. Explain why each area or stay type works, and flag hidden "
+        "costs, check-in friction, or location compromises."
+    )
 
     async def _run(self, state: dict[str, Any], context: AgentContext) -> AgentOutput:
         """Run hotel search with the normalized trip requirements."""
 
         tool_context = ToolContext(workflow_id=context.workflow_id, user_id=context.user_id)
-        result = await context.tools.get("hotel_search").execute(state["requirements"], tool_context)
+        result = await context.tools.get("hotel_search").execute(
+            state["requirements"], tool_context
+        )
         return AgentOutput(agent_name=self.name, data={"hotels": result})
 
 
@@ -87,6 +118,12 @@ class FoodRestaurantAgent(BaseAgent):
 
     name = "food_restaurant"
     description = "Suggests restaurants, local foods, and cuisine discovery."
+    system_prompt = (
+        "You are the food and restaurant specialist. Build a dining plan that reflects "
+        "local specialties, dietary preferences, budget, meal timing, reservations, and "
+        "neighborhood flow. Balance iconic dishes with realistic casual options, and "
+        "avoid recommendations that require impractical detours from the itinerary."
+    )
 
     async def _run(self, state: dict[str, Any], context: AgentContext) -> AgentOutput:
         """Generate food recommendations from destination context."""
@@ -96,7 +133,10 @@ class FoodRestaurantAgent(BaseAgent):
             agent_name=self.name,
             data={
                 "food": {
-                    "local_specialties": [f"Signature street food in {destination}", "Seasonal dessert"],
+                    "local_specialties": [
+                        f"Signature street food in {destination}",
+                        "Seasonal dessert",
+                    ],
                     "restaurants": [
                         {"name": "Neighborhood Table", "type": "local", "price": "$$"},
                         {"name": "Market Counter", "type": "casual", "price": "$"},
@@ -111,6 +151,12 @@ class ActivityAttractionAgent(BaseAgent):
 
     name = "activity_attraction"
     description = "Recommends attractions, experiences, events, and tickets."
+    system_prompt = (
+        "You are the activities and attractions specialist. Turn destination highlights "
+        "into bookable, fatigue-aware experiences with realistic durations, ticket needs, "
+        "weather sensitivity, and crowd considerations. Prioritize activities that match "
+        "the user's stated interests and create variety across the trip."
+    )
 
     async def _run(self, state: dict[str, Any], context: AgentContext) -> AgentOutput:
         """Transform researched highlights into structured activities."""
@@ -133,12 +179,20 @@ class WeatherSeasonAgent(BaseAgent):
 
     name = "weather_season"
     description = "Analyzes weather, seasonality, and packing needs."
+    system_prompt = (
+        "You are the weather and seasonality specialist. Translate forecast and seasonal "
+        "patterns into concrete planning advice: packing, daily pacing, backup indoor "
+        "options, heat or rain risk, and timing changes. Make weather guidance actionable "
+        "without overstating certainty."
+    )
 
     async def _run(self, state: dict[str, Any], context: AgentContext) -> AgentOutput:
         """Run the weather analysis tool for trip requirements."""
 
         tool_context = ToolContext(workflow_id=context.workflow_id, user_id=context.user_id)
-        result = await context.tools.get("weather_analysis").execute(state["requirements"], tool_context)
+        result = await context.tools.get("weather_analysis").execute(
+            state["requirements"], tool_context
+        )
         return AgentOutput(agent_name=self.name, data={"weather": result})
 
 
@@ -147,12 +201,20 @@ class BudgetEstimationAgent(BaseAgent):
 
     name = "budget_estimation"
     description = "Builds cost breakdown and optimization recommendations."
+    system_prompt = (
+        "You are the budget specialist. Produce a transparent cost model across flights, "
+        "lodging, food, activities, local transport, fees, and contingency. Compare the "
+        "estimate with the stated budget, identify pressure points, and suggest specific "
+        "ways to save money without undermining the trip's core purpose."
+    )
 
     async def _run(self, state: dict[str, Any], context: AgentContext) -> AgentOutput:
         """Run budget estimation and compute the total estimate."""
 
         tool_context = ToolContext(workflow_id=context.workflow_id, user_id=context.user_id)
-        result = await context.tools.get("budget_estimator").execute(state["requirements"], tool_context)
+        result = await context.tools.get("budget_estimator").execute(
+            state["requirements"], tool_context
+        )
         result["estimated_total"] = sum(result["breakdown"].values())
         return AgentOutput(agent_name=self.name, data={"budget": result})
 
@@ -162,6 +224,12 @@ class ItineraryPlanningAgent(BaseAgent):
 
     name = "itinerary_planning"
     description = "Creates an optimized day-wise itinerary."
+    system_prompt = (
+        "You are the itinerary planning specialist. Sequence each day around geography, "
+        "opening hours, traveler energy, meal breaks, transit time, weather risk, and "
+        "must-do priorities. Keep days coherent and realistic, with lighter arrival and "
+        "departure pacing plus backup options when appropriate."
+    )
 
     async def _run(self, state: dict[str, Any], context: AgentContext) -> AgentOutput:
         """Group available activities across the requested trip duration."""
@@ -172,7 +240,10 @@ class ItineraryPlanningAgent(BaseAgent):
         itinerary = []
         for day_number in range(1, days + 1):
             day_activities = activities[(day_number - 1) :: days] or [
-                {"name": f"Explore {requirements['destination']} at a relaxed pace", "duration_hours": 3}
+                {
+                    "name": f"Explore {requirements['destination']} at a relaxed pace",
+                    "duration_hours": 3,
+                }
             ]
             itinerary.append(
                 {
@@ -190,6 +261,12 @@ class ValidationAgent(BaseAgent):
 
     name = "validation"
     description = "Checks consistency, feasibility, and conflicts."
+    system_prompt = (
+        "You are the travel plan validator. Inspect the full plan for contradictions, "
+        "missing prerequisites, impossible timing, budget overruns, date conflicts, visa "
+        "or passport caveats, weather exposure, and booking risks. Return direct conflicts "
+        "and practical fixes rather than rewriting the plan."
+    )
 
     async def _run(self, state: dict[str, Any], context: AgentContext) -> AgentOutput:
         """Detect conflicts before final plan generation."""
@@ -216,6 +293,12 @@ class FinalPlanGeneratorAgent(BaseAgent):
 
     name = "final_plan_generator"
     description = "Combines validated outputs into an exportable travel plan."
+    system_prompt = (
+        "You are the final plan editor. Combine agent outputs into a concise, user-ready "
+        "travel plan with clear sections, consistent terminology, preserved assumptions, "
+        "validation notes, and export-friendly structure. Do not hide risks; summarize "
+        "what matters for booking and day-of execution."
+    )
 
     async def _run(self, state: dict[str, Any], context: AgentContext) -> AgentOutput:
         """Assemble the final travel plan payload."""
@@ -246,6 +329,12 @@ class SupervisorAgent(BaseAgent):
 
     name = "supervisor"
     description = "Coordinates workflow planning, shared state, retries, and final handoff."
+    system_prompt = (
+        "You are the workflow supervisor for a multi-agent travel planner. Coordinate the "
+        "planning sequence, protect shared state quality, keep each specialist scoped to "
+        "its responsibility, and ensure the final handoff is complete, auditable, and "
+        "ready for validation."
+    )
 
     async def _run(self, state: dict[str, Any], context: AgentContext) -> AgentOutput:
         """Return supervisor metadata for auditability."""

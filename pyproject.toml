@@ -27,6 +27,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "black>=24.8.0",
+    "isort>=5.13.2",
     "pytest>=8.3.0",
     "pytest-asyncio>=0.23.8",
     "ruff>=0.5.7",
@@ -46,6 +48,18 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "ASYNC", "C4", "SIM"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Header", "fastapi.Query"]
+
+[tool.black]
+target-version = ["py312"]
+line-length = 100
+
+[tool.isort]
+profile = "black"
+py_version = 312
+line_length = 100
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

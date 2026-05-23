@@ -139,7 +139,9 @@ class Booking(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     trip_id: Mapped[UUID] = mapped_column(ForeignKey("trips.id"), index=True)
     booking_type: Mapped[str] = mapped_column(String(80), nullable=False)
     provider: Mapped[str] = mapped_column(String(120), nullable=False)
-    status: Mapped[BookingStatus] = mapped_column(Enum(BookingStatus), default=BookingStatus.PENDING)
+    status: Mapped[BookingStatus] = mapped_column(
+        Enum(BookingStatus), default=BookingStatus.PENDING
+    )
     confirmation_code: Mapped[str | None] = mapped_column(String(120))
     payload: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
 
