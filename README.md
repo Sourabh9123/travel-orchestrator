@@ -51,6 +51,8 @@ curl -X POST http://localhost:8000/api/v1/travel/plan \
 
 See [docs/architecture.md](docs/architecture.md) for design details.
 
+For a detailed API-to-downstream flow map, see [FLOW_README.md](FLOW_README.md).
+
 For a deeper production architecture walkthrough, see [ARCHITECTURE_README.md](ARCHITECTURE_README.md).
 
 ## Postman
