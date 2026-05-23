@@ -18,10 +18,10 @@ help:
 	@printf "  make migrate       Run Alembic migrations\n"
 	@printf "  make test          Run pytest in the API container\n"
 	@printf "  make compile       Compile Python files locally\n"
-	@printf "  make lint          Run ruff, isort, and black checks in the API container\n"
-	@printf "  make format        Run isort and black in the API container\n"
-	@printf "  make isort         Sort Python imports in the API container\n"
-	@printf "  make black         Format Python files with Black in the API container\n"
+	@printf "  make lint          Run local ruff, isort, and black checks\n"
+	@printf "  make format        Run local isort and black\n"
+	@printf "  make isort         Sort local Python imports\n"
+	@printf "  make black         Format local Python files with Black\n"
 	@printf "  make clean         Remove Python cache artifacts\n"
 
 build:
@@ -57,17 +57,17 @@ compile:
 	python -m compileall $(PYTHON_PATHS)
 
 lint:
-	$(COMPOSE) exec $(API_SERVICE) ruff check .
-	$(COMPOSE) exec $(API_SERVICE) isort --check-only .
-	$(COMPOSE) exec $(API_SERVICE) black --check .
+	python -m ruff check .
+	python -m isort --check-only $(PYTHON_PATHS)
+	python -m black --check $(PYTHON_PATHS)
 
 format: isort black
 
 isort:
-	$(COMPOSE) exec $(API_SERVICE) isort .
+	python -m isort $(PYTHON_PATHS)
 
 black:
-	$(COMPOSE) exec $(API_SERVICE) black .
+	python -m black $(PYTHON_PATHS)
 
 clean:
 	find . -name __pycache__ -type d -prune -exec rm -rf {} +

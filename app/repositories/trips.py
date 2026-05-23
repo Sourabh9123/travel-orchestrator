@@ -14,12 +14,7 @@ class TripRepository(AsyncRepository[Trip]):
     async def list_for_user(self, user_id: UUID, limit: int = 25) -> list[Trip]:
         """Return recent trips owned by a user."""
 
-        result = await self.session.execute(
-            select(Trip)
-            .where(Trip.user_id == user_id)
-            .order_by(Trip.created_at.desc())
-            .limit(limit)
-        )
+        result = await self.session.execute(select(Trip).where(Trip.user_id == user_id).order_by(Trip.created_at.desc()).limit(limit))
         return list(result.scalars().all())
 
     async def set_status(self, trip_id: UUID, status: TripStatus) -> None:

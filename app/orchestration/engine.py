@@ -50,9 +50,7 @@ class WorkflowEngine:
                 "workflow": {"status": "running", "completed_nodes": [], "failed_nodes": []},
             },
         )
-        await self._emit(
-            workflow_id, WorkflowEventType.WORKFLOW_STARTED, payload={"graph": graph.to_dict()}
-        )
+        await self._emit(workflow_id, WorkflowEventType.WORKFLOW_STARTED, payload={"graph": graph.to_dict()})
 
         completed: set[str] = set()
         failed: set[str] = set()
@@ -133,9 +131,7 @@ class WorkflowEngine:
                 return
             except Exception as exc:
                 last_error = exc
-                logger.warning(
-                    "workflow.node_retry", node=node.name, attempt=attempt, error=str(exc)
-                )
+                logger.warning("workflow.node_retry", node=node.name, attempt=attempt, error=str(exc))
         raise last_error or WorkflowExecutionError(f"Workflow node {node.name} failed")
 
     async def _emit(

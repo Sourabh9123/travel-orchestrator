@@ -83,9 +83,7 @@ class PlacesTool(BaseTool):
                 f"Local market walk in {destination}",
                 f"Sunset viewpoint near {destination}",
             ],
-            "safety": (
-                "Exercise normal travel awareness and keep valuables secure in crowded areas."
-            ),
+            "safety": ("Exercise normal travel awareness and keep valuables secure in crowded areas."),
             "best_time_to_visit": "Shoulder season offers better pricing and smaller crowds.",
         }
 

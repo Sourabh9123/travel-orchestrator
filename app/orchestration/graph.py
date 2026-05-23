@@ -18,18 +18,13 @@ class WorkflowGraph:
 
     nodes: dict[str, WorkflowNode]
 
-    def ready_nodes(
-        self, completed: set[str], running: set[str], failed: set[str]
-    ) -> list[WorkflowNode]:
+    def ready_nodes(self, completed: set[str], running: set[str], failed: set[str]) -> list[WorkflowNode]:
         """Return nodes whose dependencies are complete and are not active."""
 
         return [
             node
             for node in self.nodes.values()
-            if node.name not in completed
-            and node.name not in running
-            and node.name not in failed
-            and node.depends_on.issubset(completed)
+            if node.name not in completed and node.name not in running and node.name not in failed and node.depends_on.issubset(completed)
         ]
 
     def to_dict(self) -> dict[str, dict]:

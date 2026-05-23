@@ -41,9 +41,7 @@ class RequirementAnalysisAgent(BaseAgent):
             visa_requirements=["Check passport nationality against destination rules."],
             constraints=[],
         )
-        return AgentOutput(
-            agent_name=self.name, data={"requirements": requirements.model_dump(mode="json")}
-        )
+        return AgentOutput(agent_name=self.name, data={"requirements": requirements.model_dump(mode="json")})
 
 
 class DestinationResearchAgent(BaseAgent):
@@ -84,9 +82,7 @@ class FlightTransportationAgent(BaseAgent):
         """Run flight search and append local transport guidance."""
 
         tool_context = ToolContext(workflow_id=context.workflow_id, user_id=context.user_id)
-        result = await context.tools.get("flight_search").execute(
-            state["requirements"], tool_context
-        )
+        result = await context.tools.get("flight_search").execute(state["requirements"], tool_context)
         result["ground_transport"] = ["Use airport rail or pre-booked transfer for arrival day."]
         return AgentOutput(agent_name=self.name, data={"flights": result})
 
@@ -107,9 +103,7 @@ class HotelStayAgent(BaseAgent):
         """Run hotel search with the normalized trip requirements."""
 
         tool_context = ToolContext(workflow_id=context.workflow_id, user_id=context.user_id)
-        result = await context.tools.get("hotel_search").execute(
-            state["requirements"], tool_context
-        )
+        result = await context.tools.get("hotel_search").execute(state["requirements"], tool_context)
         return AgentOutput(agent_name=self.name, data={"hotels": result})
 
 
@@ -165,12 +159,7 @@ class ActivityAttractionAgent(BaseAgent):
         highlights = destination_data.get("highlights", [])
         return AgentOutput(
             agent_name=self.name,
-            data={
-                "activities": [
-                    {"name": item, "duration_hours": 2.5, "booking_recommended": index == 0}
-                    for index, item in enumerate(highlights)
-                ]
-            },
+            data={"activities": [{"name": item, "duration_hours": 2.5, "booking_recommended": index == 0} for index, item in enumerate(highlights)]},
         )
 
 
@@ -190,9 +179,7 @@ class WeatherSeasonAgent(BaseAgent):
         """Run the weather analysis tool for trip requirements."""
 
         tool_context = ToolContext(workflow_id=context.workflow_id, user_id=context.user_id)
-        result = await context.tools.get("weather_analysis").execute(
-            state["requirements"], tool_context
-        )
+        result = await context.tools.get("weather_analysis").execute(state["requirements"], tool_context)
         return AgentOutput(agent_name=self.name, data={"weather": result})
 
 
@@ -212,9 +199,7 @@ class BudgetEstimationAgent(BaseAgent):
         """Run budget estimation and compute the total estimate."""
 
         tool_context = ToolContext(workflow_id=context.workflow_id, user_id=context.user_id)
-        result = await context.tools.get("budget_estimator").execute(
-            state["requirements"], tool_context
-        )
+        result = await context.tools.get("budget_estimator").execute(state["requirements"], tool_context)
         result["estimated_total"] = sum(result["breakdown"].values())
         return AgentOutput(agent_name=self.name, data={"budget": result})
 

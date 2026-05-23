@@ -19,12 +19,8 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    trip_status = postgresql.ENUM(
-        "DRAFT", "PLANNING", "VALIDATING", "READY", "BOOKING", "BOOKED", "FAILED", name="tripstatus"
-    )
-    booking_status = postgresql.ENUM(
-        "PENDING", "CONFIRMED", "CANCELLED", "FAILED", name="bookingstatus"
-    )
+    trip_status = postgresql.ENUM("DRAFT", "PLANNING", "VALIDATING", "READY", "BOOKING", "BOOKED", "FAILED", name="tripstatus")
+    booking_status = postgresql.ENUM("PENDING", "CONFIRMED", "CANCELLED", "FAILED", name="bookingstatus")
     trip_status.create(op.get_bind(), checkfirst=True)
     booking_status.create(op.get_bind(), checkfirst=True)
     trip_status = postgresql.ENUM(

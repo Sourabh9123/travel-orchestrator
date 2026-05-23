@@ -28,9 +28,7 @@ async def handle_app_error(request: Request, exc: AppError) -> JSONResponse:
     )
 
 
-async def handle_request_validation_error(
-    request: Request, exc: RequestValidationError
-) -> JSONResponse:
+async def handle_request_validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:
     """Render FastAPI/Pydantic validation failures with a named error code."""
 
     logger.warning("request.validation_error", path=request.url.path, errors=exc.errors())
@@ -49,9 +47,7 @@ async def handle_request_validation_error(
 async def handle_http_exception(request: Request, exc: StarletteHTTPException) -> JSONResponse:
     """Render framework HTTP exceptions in the platform error envelope."""
 
-    logger.warning(
-        "http.error", status_code=exc.status_code, detail=exc.detail, path=request.url.path
-    )
+    logger.warning("http.error", status_code=exc.status_code, detail=exc.detail, path=request.url.path)
     return JSONResponse(
         status_code=exc.status_code,
         content={
