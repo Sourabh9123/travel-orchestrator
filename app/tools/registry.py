@@ -2,14 +2,7 @@ from redis.asyncio import Redis
 
 from app.core.config import Settings
 from app.tools.base import BaseTool
-from app.tools.travel_tools import (
-    BookingTool,
-    BudgetTool,
-    FlightSearchTool,
-    HotelSearchTool,
-    PlacesTool,
-    WeatherTool,
-)
+from app.tools.travel_tools import BookingTool, BudgetTool, FlightSearchTool, HotelSearchTool, PlacesTool, WeatherTool
 
 
 class ToolRegistry:

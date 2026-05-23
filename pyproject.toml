@@ -44,7 +44,7 @@ packages = ["app"]
 
 [tool.ruff]
 target-version = "py312"
-line-length = 100
+line-length = 158
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "ASYNC", "C4", "SIM"]
@@ -54,12 +54,12 @@ extend-immutable-calls = ["fastapi.Depends", "fastapi.Header", "fastapi.Query"]
 
 [tool.black]
 target-version = ["py312"]
-line-length = 100
+line-length = 158
 
 [tool.isort]
 profile = "black"
 py_version = 312
-line_length = 100
+line_length = 158
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

@@ -7,12 +7,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 try:
-    from tenacity import (
-        AsyncRetrying,
-        retry_if_exception_type,
-        stop_after_attempt,
-        wait_exponential,
-    )
+    from tenacity import AsyncRetrying, retry_if_exception_type, stop_after_attempt, wait_exponential
 except ImportError:  # pragma: no cover - fallback for dependency-light test environments
     AsyncRetrying = None  # type: ignore[assignment]
     retry_if_exception_type = None  # type: ignore[assignment]
@@ -83,20 +78,14 @@ class BaseTool(ABC):
                     reraise=True,
                 ):
                     with attempt:
-                        result = await asyncio.wait_for(
-                            self._execute(payload, context), timeout=self.timeout_seconds
-                        )
+                        result = await asyncio.wait_for(self._execute(payload, context), timeout=self.timeout_seconds)
         except Exception as exc:
-            raise ToolExecutionError(
-                f"Tool {self.name} failed", code="tool_failed", details={"tool": self.name}
-            ) from exc
+            raise ToolExecutionError(f"Tool {self.name} failed", code="tool_failed", details={"tool": self.name}) from exc
 
         latency_ms = int((time.perf_counter() - start) * 1000)
         logger.info("tool.executed", tool=self.name, latency_ms=latency_ms)
         if self.redis is not None:
-            await self.redis.set(
-                cache_key, json.dumps(result, default=str), ex=self.cache_ttl_seconds
-            )
+            await self.redis.set(cache_key, json.dumps(result, default=str), ex=self.cache_ttl_seconds)
         return result
 
     @abstractmethod
@@ -105,17 +94,13 @@ class BaseTool(ABC):
 
         raise NotImplementedError
 
-    async def _execute_with_simple_retries(
-        self, payload: dict[str, Any], context: ToolContext
-    ) -> dict[str, Any]:
+    async def _execute_with_simple_retries(self, payload: dict[str, Any], context: ToolContext) -> dict[str, Any]:
         """Fallback retry loop used when tenacity is not installed."""
 
         last_error: Exception | None = None
         for _ in range(self.max_retries + 1):
             try:
-                return await asyncio.wait_for(
-                    self._execute(payload, context), timeout=self.timeout_seconds
-                )
+                return await asyncio.wait_for(self._execute(payload, context), timeout=self.timeout_seconds)
             except (TimeoutError, ToolExecutionError) as exc:
                 last_error = exc
                 await asyncio.sleep(0.2)
@@ -124,9 +109,7 @@ class BaseTool(ABC):
     def _cache_key(self, payload: dict[str, Any]) -> str:
         """Build a stable Redis cache key for a tool payload."""
 
-        digest = hashlib.sha256(
-            json.dumps(payload, sort_keys=True, default=str).encode()
-        ).hexdigest()
+        digest = hashlib.sha256(json.dumps(payload, sort_keys=True, default=str).encode()).hexdigest()
         return f"travel:tool:{self.name}:{digest}"
 
     async def _enforce_rate_limit(self, context: ToolContext) -> None:

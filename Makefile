@@ -1,8 +1,9 @@
-.PHONY: help build up down restart logs ps shell worker-shell migrate test compile lint format clean
+.PHONY: help build up down restart logs ps shell worker-shell migrate test compile lint format isort black clean
 
 COMPOSE ?= docker compose
 API_SERVICE ?= api
 WORKER_SERVICE ?= worker
+PYTHON_PATHS ?= app tests alembic
 
 help:
 	@printf "travel-orchestrator commands\n\n"
@@ -19,6 +20,8 @@ help:
 	@printf "  make compile       Compile Python files locally\n"
 	@printf "  make lint          Run ruff, isort, and black checks in the API container\n"
 	@printf "  make format        Run isort and black in the API container\n"
+	@printf "  make isort         Sort Python imports in the API container\n"
+	@printf "  make black         Format Python files with Black in the API container\n"
 	@printf "  make clean         Remove Python cache artifacts\n"
 
 build:
@@ -51,15 +54,19 @@ test:
 	$(COMPOSE) exec $(API_SERVICE) pytest -q
 
 compile:
-	python -m compileall app tests alembic
+	python -m compileall $(PYTHON_PATHS)
 
 lint:
 	$(COMPOSE) exec $(API_SERVICE) ruff check .
 	$(COMPOSE) exec $(API_SERVICE) isort --check-only .
 	$(COMPOSE) exec $(API_SERVICE) black --check .
 
-format:
+format: isort black
+
+isort:
 	$(COMPOSE) exec $(API_SERVICE) isort .
+
+black:
 	$(COMPOSE) exec $(API_SERVICE) black .
 
 clean:
