@@ -3,7 +3,12 @@ from uuid import UUID
 from fastapi import APIRouter, BackgroundTasks, Depends, Query, WebSocket, WebSocketDisconnect
 
 from app.api.deps import get_travel_service
-from app.schemas.travel import ReplanRequest, TravelPlanRequest, TravelPlanResponse, ValidationResult
+from app.schemas.travel import (
+    ReplanRequest,
+    TravelPlanRequest,
+    TravelPlanResponse,
+    ValidationResult,
+)
 from app.services.travel_service import TravelPlanningService
 from app.websocket.manager import websocket_manager
 
@@ -45,7 +50,9 @@ async def replan(
     original = status.get("state", {}).get("final_plan", {}).get("requirements", {})
     plan_request = TravelPlanRequest(prompt=request.prompt, **original)
     response = await service.start_plan(plan_request)
-    background_tasks.add_task(service.run_plan, response.workflow_id, plan_request, response.trip_id)
+    background_tasks.add_task(
+        service.run_plan, response.workflow_id, plan_request, response.trip_id
+    )
     return response
 
 

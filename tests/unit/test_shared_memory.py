@@ -1,5 +1,5 @@
-from uuid import uuid4
 import asyncio
+from uuid import uuid4
 
 from app.memory.shared_memory import SharedMemory
 

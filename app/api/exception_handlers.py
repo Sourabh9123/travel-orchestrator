@@ -49,7 +49,9 @@ async def handle_request_validation_error(
 async def handle_http_exception(request: Request, exc: StarletteHTTPException) -> JSONResponse:
     """Render framework HTTP exceptions in the platform error envelope."""
 
-    logger.warning("http.error", status_code=exc.status_code, detail=exc.detail, path=request.url.path)
+    logger.warning(
+        "http.error", status_code=exc.status_code, detail=exc.detail, path=request.url.path
+    )
     return JSONResponse(
         status_code=exc.status_code,
         content={
